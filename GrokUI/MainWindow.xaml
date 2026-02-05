@@ -3,13 +3,70 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:GrokUI"
+        xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
         xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
         mc:Ignorable="d"
-        Closing="Window_Closing" Loaded="Window_Loaded" Icon="app.ico"
-        Title="Grok" Height="450" Width="800">
+        Background="Transparent"
+        ResizeMode="CanResize"
+        Closing="Window_Closing" Loaded="Window_Loaded" 
+        Height="450" Width="800" WindowStyle="None"
+        Title="Grok">
+
+    <shell:WindowChrome.WindowChrome>
+        <shell:WindowChrome 
+            CaptionHeight="32" 
+            ResizeBorderThickness="{x:Static SystemParameters.WindowResizeBorderThickness}"
+            GlassFrameThickness="4" 
+            CornerRadius="8" />
+        <!-- Optional rounded corners on Win11 -->
+    </shell:WindowChrome.WindowChrome>
+
     <Grid>
-        <!-- Ensure the WebView2 NuGet package is installed and referenced in your project -->
-        <wv2:WebView2 x:Name="webView" />
+        <Grid.RowDefinitions>
+            <RowDefinition Height="36"/>
+            <!-- Custom title bar row -->
+            <RowDefinition Height="*"/>
+            <!-- Content area -->
+        </Grid.RowDefinitions>
+
+        <!-- Custom title bar – your color here -->
+        <Grid x:Name="TitleBarGrid" Grid.Row="0" Background="#FF1c1c1c"
+      shell:WindowChrome.IsHitTestVisibleInChrome="True">
+            <!-- Dark example; change freely -->
+            <!-- Icon + Title + Buttons as before -->
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <StackPanel Orientation="Horizontal">
+                <Button  Height="32" Background="Transparent" BorderThickness="0" Click="GrokClicked" Margin="4,0" VerticalAlignment="Center" ToolTip="Goto Grok">
+                    <StackPanel Orientation="Horizontal">
+                        <Image Source="/app.ico" Width="24"/>
+                        <TextBlock Text="{Binding Title, RelativeSource={RelativeSource AncestorType=Window}}"
+                            VerticalAlignment="Center" Margin="8,0,0,0" Foreground="White" FontWeight="SemiBold"/>
+                    </StackPanel>
+                </Button>
+                <Button Height="32" Background="Transparent" BorderThickness="0" Click="ApiClicked" Margin="32,0,0,0" VerticalAlignment="Center" ToolTip="Goto xAI API">
+                    <StackPanel Orientation="Horizontal">
+                        <Image Source="/api.png" Width="24"/>
+                        <TextBlock Text="API"
+                            VerticalAlignment="Center" Margin="8,0,0,0" Foreground="White" FontWeight="SemiBold"/>
+                    </StackPanel>
+                </Button>
+            </StackPanel>
+            <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Content="🗕" Width="46" Height="32" Click="Minimize_Click" Background="Transparent" BorderThickness="0" Foreground="White"/>
+                <Button x:Name="MaxRestoreBtn" Content="🗖" Width="46" Height="32" Click="MaximizeRestore_Click" Background="Transparent" BorderThickness="0" Foreground="White"/>
+                <Button Content="🗙" Width="46" Height="32" Click="Close_Click" Background="Transparent" BorderThickness="0" Foreground="White"
+                        MouseEnter="CloseBtn_MouseEnter" MouseLeave="CloseBtn_MouseLeave"/>
+            </StackPanel>
+        </Grid>
+
+        <!-- WebView2 fills the rest -->
+        <Border Grid.Row="1" CornerRadius="0,0,8,8" Padding="4,4,4,4"  >
+            <!-- Optional rounded bottom -->
+            <wv2:WebView2 x:Name="webView" />
+        </Border>
     </Grid>
 </Window>
