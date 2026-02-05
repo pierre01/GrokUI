@@ -1,6 +1,8 @@
 ﻿using Microsoft.Web.WebView2.Core;
 using System.IO;
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Media;
 
 namespace GrokUI
 {
@@ -10,13 +12,22 @@ namespace GrokUI
     public partial class MainWindow : Window
     {
         private const string GrokUrl = "https://grok.com"; // Update if the exact web URL differs
+        private const string GrokAPI = "https://console.x.ai/"; // Update if the exact web URL differs
         private const string UserDataFolder = "WebViewData"; // Relative to app exe; persists cookies/login
 
         public MainWindow()
         {
             InitializeComponent();
+            TitleBarGrid.MouseLeftButtonDown += TitleBarGrid_MouseLeftButtonDown;
         }
 
+        private void TitleBarGrid_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            if (e.ButtonState == System.Windows.Input.MouseButtonState.Pressed)
+            {
+                DragMove();
+            }
+        }
         private async void Window_Loaded(object sender, RoutedEventArgs e)
         {
             // Restore window position and size
@@ -84,6 +95,55 @@ namespace GrokUI
                 settings.WindowHeight = Height;
                 settings.Save();
             }
+        }
+
+        private void Minimize_Click(object sender, RoutedEventArgs e)
+        {
+            WindowState = WindowState.Minimized;
+        }
+
+        private void MaximizeRestore_Click(object sender, RoutedEventArgs e)
+        {
+            WindowState = (WindowState == WindowState.Maximized) ? WindowState.Normal : WindowState.Maximized;
+            // Optional: Change button symbol
+            // MaxRestoreBtn.Content = (WindowState == WindowState.Maximized) ? "🗗" : "🗖";
+        }
+
+        private void Close_Click(object sender, RoutedEventArgs e)
+        {
+            Close();
+        }
+
+        // Hover effect for close button (red on hover)
+        private void CloseBtn_MouseEnter(object sender, System.Windows.Input.MouseEventArgs e)
+        {
+            ((Button)sender).Background = System.Windows.Media.Brushes.Red;
+        }
+
+        private void CloseBtn_MouseLeave(object sender, System.Windows.Input.MouseEventArgs e)
+        {
+            ((Button)sender).Background = System.Windows.Media.Brushes.Transparent;
+        }
+
+        // Optional: Make title bar draggable
+        protected override void OnSourceInitialized(EventArgs e)
+        {
+            base.OnSourceInitialized(e);
+            // Drag only on the title bar grid (name it if needed)
+        }
+
+        private void ApiClicked(object sender, RoutedEventArgs e)
+        {
+            // Navigate to Grok api version
+            webView.Source = new Uri(GrokAPI);
+
+        }
+
+        private void GrokClicked(object sender, RoutedEventArgs e)
+        {
+            // Navigate to Grok web version
+            webView.Source = new Uri(GrokUrl);
+
         }
     }
 }
