@@ -14,7 +14,7 @@
 
     <shell:WindowChrome.WindowChrome>
         <shell:WindowChrome 
-            CaptionHeight="32" 
+            CaptionHeight="34" 
             ResizeBorderThickness="{x:Static SystemParameters.WindowResizeBorderThickness}"
             GlassFrameThickness="4" 
             CornerRadius="8" />
@@ -31,7 +31,7 @@
 
         <!-- Custom title bar – your color here -->
         <Grid x:Name="TitleBarGrid" Grid.Row="0" Background="#FF1c1c1c"
-      shell:WindowChrome.IsHitTestVisibleInChrome="True">
+      shell:WindowChrome.IsHitTestVisibleInChrome="True" Margin="4,4,4,0">
             <!-- Dark example; change freely -->
             <!-- Icon + Title + Buttons as before -->
             <Grid.ColumnDefinitions>
@@ -64,7 +64,7 @@
         </Grid>
 
         <!-- WebView2 fills the rest -->
-        <Border Grid.Row="1" CornerRadius="0,0,8,8" Padding="4,4,4,4"  >
+        <Border Grid.Row="1" CornerRadius="0,0,8,8" Padding="8,4,8,8"  >
             <!-- Optional rounded bottom -->
             <wv2:WebView2 x:Name="webView" />
         </Border>
