@@ -14,6 +14,13 @@ namespace GrokUI
         private const string GrokUrl = "https://grok.com"; // Update if the exact web URL differs
         private const string GrokAPI = "https://console.x.ai/"; // Update if the exact web URL differs
         private const string UserDataFolder = "WebViewData"; // Relative to app exe; persists cookies/login
+        private ActiveTab currentTab = ActiveTab.Grok;
+
+        private enum ActiveTab
+        {
+            Grok,
+            Api
+        }
 
         public MainWindow()
         {
@@ -45,11 +52,13 @@ namespace GrokUI
                 string userDataPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, UserDataFolder);
                 var env = await CoreWebView2Environment.CreateAsync(null, userDataPath);
 
-                // Ensure WebView2 is initialized with the environment
-                await webView.EnsureCoreWebView2Async(env);
+                // Ensure both tabs are initialized with the same persistent environment.
+                await grokWebView.EnsureCoreWebView2Async(env);
+                await apiWebView.EnsureCoreWebView2Async(env);
 
-                // Navigate to Grok web version
-                webView.Source = new Uri(GrokUrl);
+                grokWebView.Source = new Uri(GrokUrl);
+                apiWebView.Source = new Uri(GrokAPI);
+                ShowTab(ActiveTab.Grok);
             }
             catch (Exception ex)
             {
@@ -134,16 +143,31 @@ namespace GrokUI
 
         private void ApiClicked(object sender, RoutedEventArgs e)
         {
-            // Navigate to Grok api version
-            webView.Source = new Uri(GrokAPI);
+            if (currentTab == ActiveTab.Api)
+            {
+                apiWebView.Source = new Uri(GrokAPI);
+                return;
+            }
 
+            ShowTab(ActiveTab.Api);
         }
 
         private void GrokClicked(object sender, RoutedEventArgs e)
         {
-            // Navigate to Grok web version
-            webView.Source = new Uri(GrokUrl);
+            if (currentTab == ActiveTab.Grok)
+            {
+                grokWebView.Source = new Uri(GrokUrl);
+                return;
+            }
 
+            ShowTab(ActiveTab.Grok);
+        }
+
+        private void ShowTab(ActiveTab tab)
+        {
+            currentTab = tab;
+            grokWebView.Visibility = tab == ActiveTab.Grok ? Visibility.Visible : Visibility.Hidden;
+            apiWebView.Visibility = tab == ActiveTab.Api ? Visibility.Visible : Visibility.Hidden;
         }
     }
 }
