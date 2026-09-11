@@ -66,10 +66,7 @@
         <!-- WebView2 fills the rest -->
         <Border Grid.Row="1" CornerRadius="0,0,8,8" Padding="8,4,8,8"  >
             <!-- Optional rounded bottom -->
-            <Grid>
-                <wv2:WebView2 x:Name="grokWebView" />
-                <wv2:WebView2 x:Name="apiWebView" Visibility="Hidden" />
-            </Grid>
+            <ContentControl x:Name="webViewHost" />
         </Border>
     </Grid>
 </Window>

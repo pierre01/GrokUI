@@ -1,4 +1,6 @@
 ﻿using Microsoft.Web.WebView2.Core;
+using Microsoft.Web.WebView2.Wpf;
+using System.Diagnostics;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
@@ -14,6 +16,10 @@ namespace GrokUI
         private const string GrokUrl = "https://grok.com"; // Update if the exact web URL differs
         private const string GrokAPI = "https://console.x.ai/"; // Update if the exact web URL differs
         private const string UserDataFolder = "WebViewData"; // Relative to app exe; persists cookies/login
+        private readonly WebView2 grokWebView = new();
+        private readonly WebView2 apiWebView = new();
+        private CoreWebView2Environment? webViewEnvironment;
+        private bool isApiWebViewInitialized;
         private ActiveTab currentTab = ActiveTab.Grok;
 
         private enum ActiveTab
@@ -26,6 +32,8 @@ namespace GrokUI
         {
             InitializeComponent();
             TitleBarGrid.MouseLeftButtonDown += TitleBarGrid_MouseLeftButtonDown;
+            ConfigureWebViewDiagnostics(grokWebView, "Grok");
+            ConfigureWebViewDiagnostics(apiWebView, "API");
         }
 
         private void TitleBarGrid_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
@@ -50,15 +58,15 @@ namespace GrokUI
             {
                 // Create a persistent environment (handles cookies, storage across sessions)
                 string userDataPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, UserDataFolder);
-                var env = await CoreWebView2Environment.CreateAsync(null, userDataPath);
+                ReportWebViewStatus("Creating WebView2 environment");
+                webViewEnvironment = await CoreWebView2Environment.CreateAsync(null, userDataPath);
 
-                // Ensure both tabs are initialized with the same persistent environment.
-                await grokWebView.EnsureCoreWebView2Async(env);
-                await apiWebView.EnsureCoreWebView2Async(env);
-
-                grokWebView.Source = new Uri(GrokUrl);
-                apiWebView.Source = new Uri(GrokAPI);
                 ShowTab(ActiveTab.Grok);
+                ReportWebViewStatus("Initializing Grok WebView");
+                await grokWebView.EnsureCoreWebView2Async(webViewEnvironment);
+
+                ReportWebViewStatus($"Navigating Grok to {GrokUrl}");
+                grokWebView.CoreWebView2.Navigate(GrokUrl);
             }
             catch (Exception ex)
             {
@@ -141,22 +149,24 @@ namespace GrokUI
             // Drag only on the title bar grid (name it if needed)
         }
 
-        private void ApiClicked(object sender, RoutedEventArgs e)
+        private async void ApiClicked(object sender, RoutedEventArgs e)
         {
             if (currentTab == ActiveTab.Api)
             {
-                apiWebView.Source = new Uri(GrokAPI);
+                await EnsureApiWebViewAsync();
+                apiWebView.CoreWebView2?.Navigate(GrokAPI);
                 return;
             }
 
             ShowTab(ActiveTab.Api);
+            await EnsureApiWebViewAsync();
         }
 
         private void GrokClicked(object sender, RoutedEventArgs e)
         {
             if (currentTab == ActiveTab.Grok)
             {
-                grokWebView.Source = new Uri(GrokUrl);
+                grokWebView.CoreWebView2?.Navigate(GrokUrl);
                 return;
             }
 
@@ -166,8 +176,56 @@ namespace GrokUI
         private void ShowTab(ActiveTab tab)
         {
             currentTab = tab;
-            grokWebView.Visibility = tab == ActiveTab.Grok ? Visibility.Visible : Visibility.Hidden;
-            apiWebView.Visibility = tab == ActiveTab.Api ? Visibility.Visible : Visibility.Hidden;
+            webViewHost.Content = tab == ActiveTab.Grok ? grokWebView : apiWebView;
+        }
+
+        private async Task EnsureApiWebViewAsync()
+        {
+            if (isApiWebViewInitialized || webViewEnvironment == null)
+            {
+                return;
+            }
+
+            await apiWebView.EnsureCoreWebView2Async(webViewEnvironment);
+            apiWebView.CoreWebView2.Navigate(GrokAPI);
+            isApiWebViewInitialized = true;
+        }
+
+        private void ConfigureWebViewDiagnostics(WebView2 webView, string name)
+        {
+            webView.CoreWebView2InitializationCompleted += (_, e) =>
+            {
+                if (!e.IsSuccess)
+                {
+                    ReportWebViewStatus($"{name} WebView initialization failed: {e.InitializationException.Message}");
+                    return;
+                }
+
+                ReportWebViewStatus($"{name} WebView initialized");
+                webView.CoreWebView2.ProcessFailed += (_, processFailedArgs) =>
+                    ReportWebViewStatus($"{name} WebView process failed: {processFailedArgs.ProcessFailedKind}");
+            };
+
+            webView.NavigationStarting += (_, e) =>
+                ReportWebViewStatus($"{name} loading {e.Uri}");
+
+            webView.NavigationCompleted += (_, e) =>
+            {
+                if (e.IsSuccess)
+                {
+                    ReportWebViewStatus($"{name} loaded successfully");
+                    Title = name == "Grok" ? "Grok" : "Grok - API";
+                    return;
+                }
+
+                ReportWebViewStatus($"{name} navigation failed: {e.WebErrorStatus}");
+            };
+        }
+
+        private void ReportWebViewStatus(string message)
+        {
+            Debug.WriteLine($"[GrokUI] {message}");
+            Title = $"Grok - {message}";
         }
     }
 }
